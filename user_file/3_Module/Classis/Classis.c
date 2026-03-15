@@ -15,6 +15,12 @@ static Motor_TypeDef g_chassis_motors[CHASSIS_WHEEL_COUNT];
 static float g_auto_spin_speed_radps = CHASSIS_AUTO_SPIN_SPEED_RADPS;
 
 // 轮子顺序固定为：前左、前右、后左、后右
+/**
+ * @brief 底盘电机方向数组
+ *
+ * 定义了底盘4个电机的旋转方向，用于计算电机输出。
+ * 顺序为：前左、前右、后左、后右。
+ */
 static const int8_t g_wheel_dir[CHASSIS_WHEEL_COUNT] = {
     CHASSIS_DIR_FRONT_LEFT,
     CHASSIS_DIR_FRONT_RIGHT,
@@ -23,6 +29,12 @@ static const int8_t g_wheel_dir[CHASSIS_WHEEL_COUNT] = {
 };
 
 // 电机输出限幅（M3508 常见电流命令范围）
+/**
+ * @brief 底盘电机输出限幅值
+ *
+ * 定义了底盘4个电机的输出电流限幅，用于防止电机过载。
+ * 限幅范围为 [-16384.0, 16384.0]。
+ */
 #define CHASSIS_MOTOR_CMD_LIMIT 16384.0f
 
 typedef enum
