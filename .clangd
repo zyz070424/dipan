@@ -1,0 +1,24 @@
+CompileFlags:
+  Add:
+    - '-ferror-limit=0'
+    - '-Wno-implicit-int'
+    - '-Iuser_file/1_middlewares/Driver/SPI'
+    - '-Iuser_file/1_middlewares/Driver/CAN'
+    - '-Iuser_file/1_middlewares/Driver/USB'
+    - '-Iuser_file/1_middlewares/Driver/USART'
+    - '-Iuser_file/1_middlewares/Algorthm/PID'
+    - '-Iuser_file/1_middlewares/Algorthm/Matrix'
+    - '-Iuser_file/1_middlewares/Algorthm/Quaternion'
+    - '-Iuser_file/2_Device/BMI088'
+    - '-Iuser_file/2_Device/Motor'
+    - '-Iuser_file/2_Device/VOFA'
+    - '-Iuser_file/2_Device/DR16'
+    - '-Iuser_file/3_Module/Classis'
+    - '-Iuser_file/4_Task'
+  CompilationDatabase: build/Debug
+Diagnostics:
+  Suppress:
+    - unused-includes
+    - unknown_typename
+    - unknown_typename_suggest
+    - typename_requires_specqual
