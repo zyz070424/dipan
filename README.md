@@ -6,20 +6,21 @@
 
 `DR16 遥控输入 -> 全向轮解算 -> 速度环 PID -> CAN 下发电机`
 
-当前底盘支持 4 轮全向驱动，控制任务运行在 `defaultTask` 中。
+当前底盘支持 4 轮全向驱动，`defaultTask` 只负责调用任务层入口，实际控制任务由 `MyTask` 统一申请，BMI088 读取任务实现放在底盘模块层。
 
 ## 2. 代码入口
 
 - FreeRTOS 线程入口：`Core/Src/freertos.c` 的 `StartDefaultTask()`
 - 任务封装：`user_file/4_Task/MyTask.c`
 - 底盘控制主逻辑：`user_file/3_Module/Classis/Classis.c`
+- BMI088 周期读取任务：`user_file/3_Module/Classis/Classis.c` 的 `Classis_BMI088_Task()`
 
 执行顺序：
 
 1. `MyTask_Init()`
 2. `Classis_Init()`（DR16、CAN、电机、PID、定时器初始化）
-3. `MyTask_Run()`
-4. `Classis_RunTask()`（周期控制循环，不返回）
+3. `MyTask_Run()` 申请 `Classis_RunTask()` 和 `Classis_BMI088_Task()`
+4. `Classis_RunTask()` 与 `Classis_BMI088_Task()` 各自独立运行
 
 ## 3. 构建环境要求
 
@@ -72,7 +73,8 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 
 平移控制：
 
-- 左摇杆 `X/Y` 对应底盘 `vx/vy`
+- 左摇杆 `Y` 控制底盘 `vx`（前进/后退）
+- 左摇杆 `X` 控制底盘 `vy`（左右平移）
 
 ## 7. 关键参数（调参入口）
 
@@ -101,10 +103,12 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 
 1. 本工程运行依赖 FreeRTOS。
    - `Classis_RunTask()` 使用了 `xTaskGetTickCount()` / `vTaskDelayUntil()`。
+   - `Classis_BMI088_Task()` 也使用 `vTaskDelayUntil()` 固定 `1ms` 轮询 BMI088。
 2. 当前控制任务是 `1ms` 周期。
    - 在总线负载高时可能需要降到 `2ms` 以提高稳定性。
 3. DR16 接收串口句柄以代码为准。
-   - 当前 `Classis_Init()` 中使用 `DR16_Init(&huart1)`，如硬件接到其他串口（例如 UART5），需要同步修改。
+   - 当前 `Classis_Init()` 中使用 `DR16_Init(&huart3)`，如硬件接到其他串口（例如 UART5），需要同步修改。
+4. BMI088 最新数据可通过 `Classis_GetBMI088ImuData()` / `Classis_GetBMI088EulerData()` 获取。
 
 ## 10. 目录简表
 
@@ -117,4 +121,3 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 - `dipan.ioc`：CubeMX 工程文件
 
 ---
-

@@ -73,6 +73,8 @@ void Error_Handler(void);
 #define GYRO_CSB2_GPIO_Port GPIOB
 #define TEMP_088_Pin GPIO_PIN_10
 #define TEMP_088_GPIO_Port GPIOB
+#define DR16_Pin GPIO_PIN_11
+#define DR16_GPIO_Port GPIOB
 #define USART6_TX_Pin GPIO_PIN_6
 #define USART6_TX_GPIO_Port GPIOC
 #define USART6_RX_Pin GPIO_PIN_7
@@ -83,8 +85,6 @@ void Error_Handler(void);
 #define USB1_DM_GPIO_Port GPIOA
 #define USB1_DP_Pin GPIO_PIN_12
 #define USB1_DP_GPIO_Port GPIOA
-#define DR16_Pin GPIO_PIN_2
-#define DR16_GPIO_Port GPIOD
 #define CAN2_RX_Pin GPIO_PIN_5
 #define CAN2_RX_GPIO_Port GPIOB
 #define CAN2_TX_Pin GPIO_PIN_6

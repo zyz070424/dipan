@@ -230,6 +230,9 @@ void DR16_Process(DR16_DataTypeDef *dr16)
     dr16->mouse_x = DR16_Clamp(mouse_x / 32768.0f, -1.0f, 1.0f);
     dr16->mouse_y = DR16_Clamp(mouse_y / 32768.0f, -1.0f, 1.0f);
     dr16->mouse_z = DR16_Clamp(mouse_z / 32768.0f, -1.0f, 1.0f);
+
+    dr16->update_count++;
+    dr16->last_update_tick = HAL_GetTick();
 }
 
 void DR16_Timer1msCallback(DR16_DataTypeDef *dr16)

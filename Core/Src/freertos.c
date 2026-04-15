@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "MyTask.h"
 
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,7 +53,7 @@
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 256 * 4,
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -124,11 +125,7 @@ void StartDefaultTask(void *argument)
   MyTask_Init();
   MyTask_Run();
 
-  // 理论上不会走到这里，保底留一个空转循环。
-  for(;;)
-  {
-    osDelay(1000);
-  }
+  vTaskDelete(NULL); // 删除默认线程，剩下的控制链都在 MyTask_Run 创建的线程里了
   /* USER CODE END StartDefaultTask */
 }
 
@@ -136,6 +133,4 @@ void StartDefaultTask(void *argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-
-
 

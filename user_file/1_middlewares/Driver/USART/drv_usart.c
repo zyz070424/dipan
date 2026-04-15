@@ -2,6 +2,7 @@
 #include <string.h>
 
 struct Struct_UART_Manage_Object UART1_Manage_Object = {0};
+struct Struct_UART_Manage_Object UART3_Manage_Object = {0};
 struct Struct_UART_Manage_Object UART5_Manage_Object = {0};
 struct Struct_UART_Manage_Object UART6_Manage_Object = {0};
 
@@ -20,6 +21,11 @@ static struct Struct_UART_Manage_Object *USART_Get_Manage_Object(UART_HandleType
     if (huart->Instance == USART1)
     {
         return &UART1_Manage_Object;
+    }
+
+    if (huart->Instance == USART3)
+    {
+        return &UART3_Manage_Object;
     }
 
     if (huart->Instance == UART5)

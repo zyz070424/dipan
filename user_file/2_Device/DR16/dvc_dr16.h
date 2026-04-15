@@ -77,6 +77,8 @@ typedef struct
     uint8_t raw_mouse_l;
     uint8_t raw_mouse_r;
     uint16_t raw_key;
+    uint32_t update_count;
+    uint32_t last_update_tick;
 
     uint8_t prev_raw_s1;
     uint8_t prev_raw_s2;

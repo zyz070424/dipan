@@ -1,4 +1,4 @@
-﻿/* USER CODE BEGIN Header */
+/* USER CODE BEGIN Header */
 /**
   ******************************************************************************
   * @file           : usbd_cdc_if.c
@@ -23,7 +23,6 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include "drv_usb.h"
-
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -156,6 +155,10 @@ static int8_t CDC_Init_FS(void)
   /* Set Application Buffers */
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
+
+  /* 主动使能一次接收，保证CDC初始化后即可接收首包 */
+  (void)USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -290,9 +293,27 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
-  if (hcdc->TxState != 0){
+
+  if ((Buf == NULL) || (Len == 0))
+  {
+    return USBD_FAIL;
+  }
+
+  if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED)
+  {
+    return USBD_FAIL;
+  }
+
+  if (hcdc == NULL)
+  {
+    return USBD_FAIL;
+  }
+
+  if (hcdc->TxState != 0)
+  {
     return USBD_BUSY;
   }
+
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
   result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
   /* USER CODE END 7 */
@@ -318,6 +339,9 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Buf);
   UNUSED(Len);
   UNUSED(epnum);
+
+  /* 通知底层USB驱动发送完成，用于释放发送忙标志 */
+  USB_TxCplt_Callback();
   /* USER CODE END 13 */
   return result;
 }

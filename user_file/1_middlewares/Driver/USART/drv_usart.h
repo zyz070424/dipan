@@ -30,6 +30,7 @@ struct Struct_UART_Manage_Object
 };
 
 extern struct Struct_UART_Manage_Object UART1_Manage_Object;
+extern struct Struct_UART_Manage_Object UART3_Manage_Object;
 extern struct Struct_UART_Manage_Object UART5_Manage_Object;
 extern struct Struct_UART_Manage_Object UART6_Manage_Object;
 
