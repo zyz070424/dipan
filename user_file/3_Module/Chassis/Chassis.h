@@ -73,7 +73,7 @@ enum Chassis_Rotate_ModeTypeDef
 {
     CHASSIS_ROTATE_MODE_MANUAL = 0, /**< 手动旋转 */
     CHASSIS_ROTATE_MODE_AUTO,       /**< 自动自旋 */
-    CHASSIS_ROTATE_MODE_STOP,       /**< 停止旋转 */
+    CHASSIS_ROTATE_MODE_STOP,       /**< 停止全部运动并解除底盘驱动输出 */
 };
 
 /**
@@ -225,6 +225,15 @@ private:
      * @param target_speed_with_dir 带方向补偿后的目标速度
      */
     void ApplyWheelDirection(const float *target_speed, float *target_speed_with_dir);
+
+    /**
+     * @brief 清空底盘运动控制相关运行时状态
+     *
+     * @details
+     * 该函数用于在进入无力挡位时清除积分项和自旋锁定状态，避免恢复驱动后
+     * 立即输出残留控制量。
+     */
+    void ResetMotionControlState(void);
 
     /**
      * @brief CAN 离线保护

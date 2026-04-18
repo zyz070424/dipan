@@ -8,19 +8,29 @@
 
 当前底盘支持 4 轮全向驱动，`defaultTask` 只负责调用任务层入口，实际控制任务由 `MyTask` 统一申请，BMI088 读取任务实现放在底盘模块层。
 
+当前主链路中的 `user_file` 实现文件已经全部切到 `.cpp`，业务层/设备层/驱动层统一采用类对象方式组织。当前仍保留的 `C` 入口只包括：
+
+- `MyTask_Init()` / `MyTask_Run()`：给 `freertos.c` 调用
+- `Chassis_Timer1msCallback()`：给 `main.c` 的 1ms 定时回调调用
+- `USB_Rx_Callback()` / `USB_TxCplt_Callback()`：给 `usbd_cdc_if.c` 调用
+- HAL 官方回调：`HAL_CAN_*`、`HAL_SPI_*`、`HAL_UART_*`
+
 ## 2. 代码入口
 
 - FreeRTOS 线程入口：`Core/Src/freertos.c` 的 `StartDefaultTask()`
 - 任务封装：`user_file/4_Task/MyTask.cpp`
 - 底盘控制主逻辑：`user_file/3_Module/Chassis/Chassis.cpp`
-- BMI088 周期读取任务：`user_file/3_Module/Chassis/Chassis.cpp` 的 `Chassis_BMI088_Task()`
+- 底盘全局对象：`user_file/3_Module/Chassis/Chassis.cpp` 中的 `Chassis`
 
 执行顺序：
 
-1. `MyTask_Init()`
-2. `Chassis_Init()`（DR16、CAN、电机、PID、定时器初始化）
-3. `MyTask_Run()` 申请 `Chassis_RunTask()` 和 `Chassis_BMI088_Task()`
-4. `Chassis_RunTask()` 与 `Chassis_BMI088_Task()` 各自独立运行
+1. `StartDefaultTask()` 调用 `MyTask_Init()`
+2. `MyTask_Init()` 内部调用 `Chassis.Init(NULL)`，完成 DR16、CAN、电机、PID、定时器初始化
+3. `StartDefaultTask()` 继续调用 `MyTask_Run()`
+4. `MyTask_Run()` 创建两个任务：
+   - `MyTask_Chassis_Task()` -> `Chassis.RunTask()`
+   - `MyTask_Chassis_BMI088_Task()` -> `Chassis.BMI088Task()`
+5. `main.c` 的 TIM2 1ms 节拍通过 `Chassis_Timer1msCallback()` 转发到 `Chassis.Timer1msCallback()`
 
 ## 3. 构建环境要求
 
@@ -37,7 +47,7 @@
 
 ```powershell
 cmake --preset Debug
-cmake --build build/Debug
+cmake --build --preset Debug
 ```
 
 产物：
@@ -68,8 +78,9 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 - `DOWN`：自动自旋模式
   - 持续自旋
   - 右摇杆 `X` 用于增减自旋速度
-- `MIDDLE`：停止旋转
-  - 旋转角速度置 0
+- `MIDDLE`：无力挡位
+  - 平移与旋转目标全部清零
+  - 四个底盘电机直接下发 `0`，车辆不主动输出驱动力
 
 平移控制：
 
@@ -93,29 +104,34 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 
 文件：`USB_DEVICE/App/usbd_cdc_if.c`
 
-当前 `CDC_Receive_FS()` 已改为：
+当前 `CDC_Receive_FS()` / `CDC_TransmitCplt_FS()` 已改为：
 
 - 不直接在此处做默认的 `SetRxBuffer/ReceivePacket` 组合
 - 统一转发到 `USB_Rx_Callback(Buf, *Len)`
-- 由 `user_file/1_middlewares/Driver/USB/drv_usb.c` 完成双缓冲切换、上层回调分发与下一包接收准备
+- 统一转发到 `USB_TxCplt_Callback()`
+- 由 `user_file/1_middlewares/Driver/USB/drv_usb.cpp` 完成双缓冲切换、上层回调分发、发送忙状态释放与下一包接收准备
 
 ## 9. 已知注意事项
 
 1. 本工程运行依赖 FreeRTOS。
-   - `Chassis_RunTask()` 使用了 `xTaskGetTickCount()` / `vTaskDelayUntil()`。
-   - `Chassis_BMI088_Task()` 也使用 `vTaskDelayUntil()` 固定 `1ms` 轮询 BMI088。
+   - `Chassis.RunTask()` 使用了 `xTaskGetTickCount()` / `vTaskDelayUntil()`。
+   - `Chassis.BMI088Task()` 也使用 `vTaskDelayUntil()` 固定 `1ms` 轮询 BMI088。
 2. 当前控制任务是 `1ms` 周期。
    - 在总线负载高时可能需要降到 `2ms` 以提高稳定性。
 3. DR16 接收串口句柄以代码为准。
-   - 当前 `Chassis_Init()` 中使用 `DR16_Init(&huart3)`，如硬件接到其他串口（例如 UART5），需要同步修改。
-4. BMI088 最新数据可通过 `Chassis_GetBMI088ImuData()` / `Chassis_GetBMI088EulerData()` 获取。
+   - 当前 `Chassis.Init()` 中使用 `DR16_Manage_Object.Init(&huart3)`，如硬件接到其他串口（例如 UART5），需要同步修改。
+4. BMI088 最新数据由 `Chassis` 对象内部缓存维护，可通过 `Chassis.GetBMI088ImuData()` / `Chassis.GetBMI088EulerData()` 获取。
+5. 当前设备层只保留：
+   - `Motor`
+   - `DR16`
+   - `BMI088`
 
 ## 10. 目录简表
 
 - `Core/`：CubeMX 生成的 HAL / FreeRTOS 入口
 - `USB_DEVICE/`：USB CDC 设备协议层
 - `user_file/1_middlewares/`：驱动与算法
-- `user_file/2_Device/`：设备层（电机、DR16、BMI088、VOFA）
+- `user_file/2_Device/`：设备层（电机、DR16、BMI088）
 - `user_file/3_Module/Chassis/`：底盘控制模块
 - `user_file/4_Task/`：任务封装入口
 - `dipan.ioc`：CubeMX 工程文件

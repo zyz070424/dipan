@@ -192,6 +192,38 @@ void Class_Chassis::ApplyWheelDirection(const float *target_speed, float *target
 }
 
 /**
+ * @brief 清空底盘运动控制相关运行时状态
+ */
+void Class_Chassis::ResetMotionControlState(void)
+{
+    uint8_t i;
+    uint8_t pid_index;
+
+    auto_spin_speed_radps_ = CHASSIS_AUTO_SPIN_SPEED_RADPS;
+    spin_lock_yaw_deg_ = 0.0f;
+    spin_lock_valid_ = 0u;
+
+    for (i = 0u; i < CHASSIS_WHEEL_COUNT; i++)
+    {
+        for (pid_index = 0u; pid_index < Motor[i].PID_Use_Count; pid_index++)
+        {
+            Motor[i].PID[pid_index].P_out = 0.0f;
+            Motor[i].PID[pid_index].I_out = 0.0f;
+            Motor[i].PID[pid_index].D_out = 0.0f;
+            Motor[i].PID[pid_index].FeedForward_out = 0.0f;
+            Motor[i].PID[pid_index].target = 0.0f;
+            Motor[i].PID[pid_index].prev_target = 0.0f;
+            Motor[i].PID[pid_index].output = 0.0f;
+            Motor[i].PID[pid_index].Input = 0.0f;
+            Motor[i].PID[pid_index].error = 0.0f;
+            Motor[i].PID[pid_index].prev_error = 0.0f;
+            Motor[i].PID[pid_index].integral = 0.0f;
+            Motor[i].PID[pid_index].dt = 0.0f;
+        }
+    }
+}
+
+/**
  * @brief CAN 离线保护
  */
 void Class_Chassis::CANOfflineProtect(void)
@@ -488,11 +520,26 @@ void Class_Chassis::Control(const DR16_DataTypeDef *dr16,
         return;
     }
 
+    rotate_mode = GetRotateMode(dr16);
+    if (rotate_mode == CHASSIS_ROTATE_MODE_STOP)
+    {
+        if (prev_rotate_mode_ != CHASSIS_ROTATE_MODE_STOP)
+        {
+            ResetMotionControlState();
+        }
+
+        prev_rotate_mode_ = rotate_mode;
+        target_speed[0] = 0.0f;
+        target_speed[1] = 0.0f;
+        target_speed[2] = 0.0f;
+        target_speed[3] = 0.0f;
+        return;
+    }
+
     vx_ref = dr16->left_x * max_speed;
     vy_ref = dr16->left_y * max_speed;
     vx_body = vx_ref;
     vy_body = vy_ref;
-    rotate_mode = GetRotateMode(dr16);
 
     if ((rotate_mode == CHASSIS_ROTATE_MODE_AUTO) && (yaw_valid != 0u))
     {
@@ -547,6 +594,7 @@ void Class_Chassis::RunTask(void *params)
     uint8_t spi_online_changed;
     uint8_t usb_online_changed;
     uint16_t alive_check_div = 0u;
+    Chassis_Rotate_ModeTypeDef rotate_mode;
 
     (void)params;
 
@@ -620,7 +668,19 @@ void Class_Chassis::RunTask(void *params)
                 CHASSIS_MAX_LINEAR_SPEED_MPS,
                 CHASSIS_MAX_ANGULAR_SPEED_RADPS);
 
+        rotate_mode = GetRotateMode(&DR16_Data);
         ApplyWheelDirection(target_speed, target_speed_with_dir);
+
+        if (rotate_mode == CHASSIS_ROTATE_MODE_STOP)
+        {
+            for (i = 0u; i < CHASSIS_WHEEL_COUNT; i++)
+            {
+                Motor[i].SendCANData(0);
+            }
+
+            vTaskDelayUntil(&last_wake_time, loop_ticks);
+            continue;
+        }
 
         for (i = 0u; i < CHASSIS_WHEEL_COUNT; i++)
         {
