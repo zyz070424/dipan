@@ -11,16 +11,16 @@
 ## 2. 代码入口
 
 - FreeRTOS 线程入口：`Core/Src/freertos.c` 的 `StartDefaultTask()`
-- 任务封装：`user_file/4_Task/MyTask.c`
-- 底盘控制主逻辑：`user_file/3_Module/Classis/Classis.c`
-- BMI088 周期读取任务：`user_file/3_Module/Classis/Classis.c` 的 `Classis_BMI088_Task()`
+- 任务封装：`user_file/4_Task/MyTask.cpp`
+- 底盘控制主逻辑：`user_file/3_Module/Chassis/Chassis.cpp`
+- BMI088 周期读取任务：`user_file/3_Module/Chassis/Chassis.cpp` 的 `Chassis_BMI088_Task()`
 
 执行顺序：
 
 1. `MyTask_Init()`
-2. `Classis_Init()`（DR16、CAN、电机、PID、定时器初始化）
-3. `MyTask_Run()` 申请 `Classis_RunTask()` 和 `Classis_BMI088_Task()`
-4. `Classis_RunTask()` 与 `Classis_BMI088_Task()` 各自独立运行
+2. `Chassis_Init()`（DR16、CAN、电机、PID、定时器初始化）
+3. `MyTask_Run()` 申请 `Chassis_RunTask()` 和 `Chassis_BMI088_Task()`
+4. `Chassis_RunTask()` 与 `Chassis_BMI088_Task()` 各自独立运行
 
 ## 3. 构建环境要求
 
@@ -78,7 +78,7 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 
 ## 7. 关键参数（调参入口）
 
-文件：`user_file/3_Module/Classis/Classis.h`
+文件：`user_file/3_Module/Chassis/Chassis.h`
 
 - `CHASSIS_CTRL_DT_S`：控制计算 `dt`（与任务周期保持一致）
 - `CHASSIS_MAX_LINEAR_SPEED_MPS`：最大平移速度
@@ -102,13 +102,13 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 ## 9. 已知注意事项
 
 1. 本工程运行依赖 FreeRTOS。
-   - `Classis_RunTask()` 使用了 `xTaskGetTickCount()` / `vTaskDelayUntil()`。
-   - `Classis_BMI088_Task()` 也使用 `vTaskDelayUntil()` 固定 `1ms` 轮询 BMI088。
+   - `Chassis_RunTask()` 使用了 `xTaskGetTickCount()` / `vTaskDelayUntil()`。
+   - `Chassis_BMI088_Task()` 也使用 `vTaskDelayUntil()` 固定 `1ms` 轮询 BMI088。
 2. 当前控制任务是 `1ms` 周期。
    - 在总线负载高时可能需要降到 `2ms` 以提高稳定性。
 3. DR16 接收串口句柄以代码为准。
-   - 当前 `Classis_Init()` 中使用 `DR16_Init(&huart3)`，如硬件接到其他串口（例如 UART5），需要同步修改。
-4. BMI088 最新数据可通过 `Classis_GetBMI088ImuData()` / `Classis_GetBMI088EulerData()` 获取。
+   - 当前 `Chassis_Init()` 中使用 `DR16_Init(&huart3)`，如硬件接到其他串口（例如 UART5），需要同步修改。
+4. BMI088 最新数据可通过 `Chassis_GetBMI088ImuData()` / `Chassis_GetBMI088EulerData()` 获取。
 
 ## 10. 目录简表
 
@@ -116,7 +116,7 @@ STM32_Programmer_CLI -c port=SWD -w build/Debug/dipan.elf -v -rst
 - `USB_DEVICE/`：USB CDC 设备协议层
 - `user_file/1_middlewares/`：驱动与算法
 - `user_file/2_Device/`：设备层（电机、DR16、BMI088、VOFA）
-- `user_file/3_Module/Classis/`：底盘控制模块
+- `user_file/3_Module/Chassis/`：底盘控制模块
 - `user_file/4_Task/`：任务封装入口
 - `dipan.ioc`：CubeMX 工程文件
 

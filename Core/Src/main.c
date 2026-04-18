@@ -29,7 +29,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "Classis.h"
+#include "Chassis.h"
 
 /* USER CODE END Includes */
 
@@ -197,7 +197,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM2)
   {
     // 1ms节拍：刷新DR16的按键/拨杆边沿状态
-    Classis_Timer1msCallback();
+    Chassis_Timer1msCallback();
   }
   /* USER CODE END Callback 1 */
 }

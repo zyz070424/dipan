@@ -11,6 +11,9 @@ cmake_minimum_required(VERSION 3.22)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 
 # Define the build type
@@ -25,11 +28,8 @@ set(CMAKE_PROJECT_NAME dipan)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Core project settings
-project(${CMAKE_PROJECT_NAME})
+project(${CMAKE_PROJECT_NAME} LANGUAGES C CXX ASM)
 message("Build type: " ${CMAKE_BUILD_TYPE})
-
-# Enable CMake support for ASM and C languages
-enable_language(C ASM)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
@@ -45,19 +45,18 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
-    user_file/1_middlewares/Driver/SPI/drv_spi.c
-    user_file/1_middlewares/Driver/CAN/drv_can.c
-    user_file/1_middlewares/Driver/USB/drv_usb.c
-    user_file/1_middlewares/Driver/USART/drv_usart.c
-    user_file/1_middlewares/Algorthm/PID/alg_pid.c
-    user_file/1_middlewares/Algorthm/Matrix/alg_matrix.c
-    user_file/1_middlewares/Algorthm/Quaternion/alg_quaternion.c
-    user_file/2_Device/BMI088/dvc_bmi088.c
-    user_file/2_Device/Motor/dvc_motor.c
-    user_file/2_Device/VOFA/dvc_vofa.c
-    user_file/2_Device/DR16/dvc_dr16.c
-    user_file/3_Module/Classis/Classis.c
-    user_file/4_Task/MyTask.c
+    user_file/1_middlewares/Driver/SPI/drv_spi.cpp
+    user_file/1_middlewares/Driver/CAN/drv_can.cpp
+    user_file/1_middlewares/Driver/USB/drv_usb.cpp
+    user_file/1_middlewares/Driver/USART/drv_usart.cpp
+    user_file/1_middlewares/Algorthm/PID/alg_pid.cpp
+    user_file/1_middlewares/Algorthm/Matrix/alg_matrix.cpp
+    user_file/1_middlewares/Algorthm/Quaternion/alg_quaternion.cpp
+    user_file/2_Device/BMI088/dvc_bmi088.cpp
+    user_file/2_Device/Motor/dvc_motor.cpp
+    user_file/2_Device/DR16/dvc_dr16.cpp
+    user_file/3_Module/Chassis/Chassis.cpp
+    user_file/4_Task/MyTask.cpp
 )
 
 # Add include paths
@@ -72,9 +71,8 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     user_file/1_middlewares/Algorthm/Quaternion
     user_file/2_Device/BMI088
     user_file/2_Device/Motor
-    user_file/2_Device/VOFA
     user_file/2_Device/DR16
-    user_file/3_Module/Classis
+    user_file/3_Module/Chassis
     user_file/4_Task
 
 )
@@ -95,3 +93,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     # Add user defined libraries
 )
 
+set_source_files_properties(
+    user_file/1_middlewares/Algorthm/PID/alg_pid.cpp
+    PROPERTIES LANGUAGE CXX
+)
